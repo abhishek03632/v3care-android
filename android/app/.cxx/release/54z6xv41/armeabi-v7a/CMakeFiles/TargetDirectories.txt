@@ -1,0 +1,2 @@
+D:/v3care/v3care-main/android/app/.cxx/release/54z6xv41/armeabi-v7a/CMakeFiles/edit_cache.dir
+D:/v3care/v3care-main/android/app/.cxx/release/54z6xv41/armeabi-v7a/CMakeFiles/rebuild_cache.dir

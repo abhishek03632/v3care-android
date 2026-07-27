@@ -2,8 +2,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../../Constants/app_colors.dart';
@@ -29,12 +31,57 @@ class LoginPageState extends State<LoginPage> {
   FocusNode usernameFocusNode = FocusNode();
   final controller = WebViewController();
   RxBool checkTermsCondition = false.obs;
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   @override
   void initState() {
     homeController.check.value = false;
     homeController.txtUsername.clear();
     super.initState();
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    try {
+      EasyLoading.show(status: ConstHelper.pleaseWaitMsg);
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+
+      if (googleUser == null) {
+        EasyLoading.dismiss();
+        return;
+      }
+
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithCredential(credential);
+
+      EasyLoading.dismiss();
+
+      if (userCredential.user != null) {
+        Get.snackbar(
+          "Success",
+          "Google Sign-in successful",
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        // Navigate to home or next screen based on your flow
+        if (kDebugMode) {
+          print('Google Sign-in User: ${userCredential.user?.email}');
+        }
+      }
+    } catch (error) {
+      EasyLoading.dismiss();
+      if (kDebugMode) {
+        print('Google Sign-in Error: $error');
+      }
+      ConstHelper.errorDialog(
+        text: 'Google Sign-in failed: ${error.toString()}',
+        seconds: 10,
+      );
+    }
   }
 
   @override
@@ -488,6 +535,44 @@ class LoginPageState extends State<LoginPage> {
                         }
                       }
                     },
+                  ),
+                ),
+                SizedBox(
+                  height: Get.height * 0.02,
+                ),
+                GestureDetector(
+                  onTap: _handleGoogleSignIn,
+                  child: Container(
+                    width: Get.width * 0.7,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: Get.width / 30,
+                      vertical: Get.width / 30,
+                    ),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppColors.grey),
+                      borderRadius: BorderRadius.circular(
+                        AppSizes.displayHeight(context) * 0.06,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SvgPicture.asset(
+                          "assets/images/svg/google_icon.svg",
+                          height: Get.height / 50,
+                          width: Get.height / 50,
+                        ),
+                        SizedBox(width: Get.width / 30),
+                        Text(
+                          "Sign in with Google",
+                          style: GoogleFonts.inter(
+                            fontSize: Get.height / 60,
+                            color: AppColors.black,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 SizedBox(
